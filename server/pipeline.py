@@ -244,8 +244,8 @@ def detect_call_language(context: np.ndarray) -> str | None:
     """Pin the call language from the audio itself, before any text is decoded. Letting transcribe() auto-detect on the
     first 3 s window pinned a Hindi opener to "en" and decoded the whole call as translated English. Only hi/en are
     candidates; Hinglish helpline callers lean Hindi, so Hindi wins unless English is clearly ahead."""
-    if _whisper is None or len(context) < SR * 2 or not has_speech(context):
-        return None
+    if _whisper is None or len(context) < SR * 5 or not has_speech(context):
+        return None  # a 3 s opener ("Namaste") is too little to tell Hinglish from English
     try:
         _, _, probs = _whisper.detect_language(audio=context[: 12 * SR])
         d = dict(probs)
@@ -350,8 +350,6 @@ class Session:
             if self.language is None:
                 self.language = detect_call_language(self.context)
             tr = transcribe_context(self.context, win_start_in_ctx, self.language)
-        if self.language is None and tr["language"] in ("hi", "en") and tr["window_text"]:
-            self.language = tr["language"]  # detected once, then pinned: stops mid-call flips and prompt leakage
         if tr["window_text"]:
             self.full_text.append(tr["window_text"])
         fraud = fraud_scan(tr["context_text"])
