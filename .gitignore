@@ -13,3 +13,6 @@ server.log
 # OS
 .DS_Store
 Thumbs.db
+docs/deck-render/
+docs/record.log
+web/rec-tmp/
