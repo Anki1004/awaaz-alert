@@ -67,18 +67,55 @@ python server/eval.py
 
 | sample (synthetic, edge-tts) | kind | urgency | level | named script | fraud | avg latency / 3 s window | RTF |
 |---|---|---|---|---|---|---|---|
-| Digital arrest — scammer side | fraudster | **64** | high | Digital arrest | 0.56 | 752 ms | 0.25 |
-| Victim calling 1930 after loss | victim | **65** | high | Digital arrest (described by victim) | 0.79 | 518 ms | 0.18 |
-| Bank KYC / OTP scam | fraudster | **54** | medium | Remote-access takeover | 0.79 | 506 ms | 0.18 |
-| Part-time task / investment scam (English) | fraudster | **50** | medium | Task / investment scam | 0.65 | 372 ms | 0.13 |
-| Routine status query (control) | normal | **16** | low | — | 0.07 | 501 ms | 0.18 |
+| Digital arrest — scammer side | fraudster | **64** | high | Digital arrest | 0.56 | 760 ms | 0.26 |
+| Victim calling 1930 after loss | victim | **67** | high | Digital arrest (described by victim) | 0.79 | 570 ms | 0.20 |
+| Bank KYC / OTP scam | fraudster | **54** | medium | Remote-access takeover | 0.79 | 518 ms | 0.19 |
+| Part-time task / investment scam (English) | fraudster | **50** | medium | Task / investment scam | 0.65 | 471 ms | 0.16 |
+| Routine status query (control) | normal | **16** | low | — | 0.07 | 570 ms | 0.21 |
 
 `python server/eval.py` → **control lowest: PASS**. RTX 4060 laptop GPU, faster-whisper large-v3-turbo fp16 + emotion2vec+ base.
 Stage profile on one 3 s window: whisper ≈ 400 ms, emotion2vec ≈ 70 ms, prosody ≈ 5 ms.
 
 What this table proves: the pipeline runs in real time (RTF < 0.3) and the **script path separates scam calls from a
-calm control by ~4×**. What it does not prove: emotion accuracy — the TTS voices are flat (distress 0.0–0.11 on every
+calm control by 3–4×**. What it does not prove: emotion accuracy — the TTS voices are flat (distress 0.0–0.11 on every
 clip), so the acoustic branch contributes almost nothing here. That branch needs consented real recordings.
+
+## Stress test: does the score beat a plain keyword alarm?
+
+The five demo calls above are a showcase, not a benchmark. To find out where the fused score is weak, we added 20
+more synthetic calls aimed at the failure modes that matter for triage — a **calm** caller reporting a real loss, a
+frightened caller who uses none of the scam vocabulary, **legitimate** calls full of scary words (OTP, police, parcel,
+customs, KYC, SIM block), and scam scripts outside the demo set — and scored them against a naive baseline
+(*alert if the Hinglish scam lexicon matches anything*). "Alert" = AwaazAlert level medium or above.
+
+| set | how it was used | AwaazAlert: scams caught / false alerts | keyword-only: scams caught / false alerts |
+|---|---|---|---|
+| `samples/hard` (11 calls) | **dev set** — labels written first, then used to fix lexicon gaps (see `results-run1-before-fixes.json`: 3/6 and 1/5 before the fixes) | 5/6 · 1/5 | 5/6 · 2/5 |
+| `samples/heldout` (9 calls) | written *after* those fixes, scored **once**, lexicon not touched afterwards | **2/5 · 1/4** | **5/5 · 2/4** |
+
+Reproduce: `python server/make_hard_cases.py && python server/eval_hard.py` and `make_heldout.py` / `eval_heldout.py`.
+
+What we take from it, plainly:
+
+- **On held-out calls the fused score caught fewer scams (2/5) than a keyword alarm (5/5)**, with fewer false alerts
+  (1/4 vs 2/4). It under-ranks scams that light only one or two lexicon categories (electricity-bill, SIM/TRAI,
+  family-emergency scripts). A keyword alarm is noisier but does not miss them.
+- Legitimate calls and scam calls use the same words: a genuine "SIM block" question scores 0.375 on the lexicon, a real
+  electricity scam 0.23. **No threshold on keyword evidence separates them** — we did not tune one, because on 20
+  synthetic calls that would be overfitting. Separating them needs context (who is asking for what), i.e. real labelled
+  calls, not more regexes.
+- Whisper is **confidently wrong** on Hinglish: segment confidence stays 0.77–0.9 on garbled transcripts, even with
+  added noise. We tried an "unclear transcript" state driven by that confidence; it never fired, so we removed it
+  rather than ship a safety net that does not catch anything.
+- Two changes survived because they are design decisions, not tuning: a first-person **loss report** (past-tense "paise
+  nikal gaye", "OTP bata diya") floors a call at *medium* so a calm victim is not ranked as routine, and the call
+  language is now pinned from the audio before decoding (a Hindi opener used to be pinned to English and decoded as
+  translated English).
+
+So the claim we make is narrow: AwaazAlert is a **ranking aid for a human operator** — explainable, real-time, private by
+design — and its accuracy on real helpline calls is **unmeasured**. The synthetic voices are flat, so the acoustic
+branch is untested too. The next step is not another model; it is consented, expert-labelled calls and a human-only vs
+human-plus-AwaazAlert triage comparison.
 
 ## Honest limitations
 

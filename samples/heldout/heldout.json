@@ -1,0 +1,74 @@
+[
+  {
+    "id": "h-calm-loss-upi",
+    "file": "h-calm-loss-upi.wav",
+    "expect": "alert",
+    "why": "Calm loss report, different wording.",
+    "text": "Namaste, mere UPI se teen baar paise kat gaye, main ne kuch kiya nahi, kripya check kar dijiye aur batayiye kya karna chahiye.",
+    "synthetic": true
+  },
+  {
+    "id": "h-sim-trai-scam",
+    "file": "h-sim-trai-scam.wav",
+    "expect": "alert",
+    "why": "TRAI / SIM-block impersonation.",
+    "text": "Main TRAI se bol raha hoon. Aapke number se illegal calls ho rahi hain, aapka SIM aaj raat block ho jayega. Verification ke liye abhi mere saath line par rahiye.",
+    "synthetic": true
+  },
+  {
+    "id": "h-electricity-scam",
+    "file": "h-electricity-scam.wav",
+    "expect": "alert",
+    "why": "Electricity-disconnection scam.",
+    "text": "Sir, your electricity connection will be disconnected tonight because the bill is unpaid. Pay two thousand rupees immediately on this UPI number to avoid it.",
+    "synthetic": true
+  },
+  {
+    "id": "h-family-emergency",
+    "file": "h-family-emergency.wav",
+    "expect": "alert",
+    "why": "Family-emergency scam, victim-side after paying.",
+    "text": "Mere bete ke naam se kisi ne call kiya, bola accident ho gaya hai, paise bhejo. Maine bhej diye, ab uska phone band hai, mujhe darr lag raha hai.",
+    "synthetic": true
+  },
+  {
+    "id": "h-kbc-whatsapp",
+    "file": "h-kbc-whatsapp.wav",
+    "expect": "alert",
+    "why": "WhatsApp lottery with fee.",
+    "text": "Congratulations, you have won twenty five lakh in the WhatsApp lucky draw. To release the prize please pay the processing fee today.",
+    "synthetic": true
+  },
+  {
+    "id": "h-legit-sim-lost",
+    "file": "h-legit-sim-lost.wav",
+    "expect": "no-alert",
+    "why": "Legitimate: lost SIM, wants to block it.",
+    "text": "Mera phone kho gaya hai, mujhe apna SIM block karwana hai, uske liye kaun sa number dial karna hoga?",
+    "synthetic": true
+  },
+  {
+    "id": "h-legit-bill-query",
+    "file": "h-legit-bill-query.wav",
+    "expect": "no-alert",
+    "why": "Legitimate: own electricity bill question.",
+    "text": "Mere ghar ka bijli ka bill is mahine zyada aaya hai, main online payment kaise kar sakta hoon aur receipt kahan milegi?",
+    "synthetic": true
+  },
+  {
+    "id": "h-legit-police-callback",
+    "file": "h-legit-police-callback.wav",
+    "expect": "no-alert",
+    "why": "Legitimate: wants to reach the investigating officer on his own case.",
+    "text": "Meri complaint par police ne jaanch shuru ki thi, main investigating officer se baat karna chahti hoon, unka number kahan se milega?",
+    "synthetic": true
+  },
+  {
+    "id": "h-legit-bank-hours",
+    "file": "h-legit-bank-hours.wav",
+    "expect": "no-alert",
+    "why": "Legitimate: bank branch timings.",
+    "text": "Could you tell me the timings of my bank branch and whether the OTP for net banking can be changed to a new mobile number?",
+    "synthetic": true
+  }
+]

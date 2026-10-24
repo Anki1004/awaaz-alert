@@ -20,6 +20,7 @@ Design rules:
 from __future__ import annotations
 
 import logging
+import math
 import os
 import subprocess
 import threading
@@ -239,6 +240,24 @@ class SpeakerBaseline:
         return float(min(1.0, max(0.0, a)))
 
 
+def detect_call_language(context: np.ndarray) -> str | None:
+    """Pin the call language from the audio itself, before any text is decoded. Letting transcribe() auto-detect on the
+    first 3 s window pinned a Hindi opener to "en" and decoded the whole call as translated English. Only hi/en are
+    candidates; Hinglish helpline callers lean Hindi, so Hindi wins unless English is clearly ahead."""
+    if _whisper is None or len(context) < SR * 2 or not has_speech(context):
+        return None
+    try:
+        _, _, probs = _whisper.detect_language(audio=context[: 12 * SR])
+        d = dict(probs)
+        p_hi, p_en = d.get("hi", 0.0), d.get("en", 0.0)
+        if p_hi + p_en < 0.5:
+            return None
+        return "hi" if p_hi >= 0.5 * p_en else "en"
+    except Exception:  # noqa: BLE001
+        log.exception("language detection failed")
+        return None
+
+
 def transcribe_context(context: np.ndarray, window_start_in_context: float, language: str | None = None) -> dict:
     """Transcribe the context; return words inside the current window + the full context text."""
     if _whisper is None or len(context) < SR // 2 or not has_speech(context):
@@ -252,9 +271,11 @@ def transcribe_context(context: np.ndarray, window_start_in_context: float, lang
             initial_prompt=(ASR_PROMPT.get(language or "default", ASR_PROMPT["default"]) if USE_PROMPT else None),
             no_speech_threshold=0.6, log_prob_threshold=-1.0, compression_ratio_threshold=2.4,
         )
-        words, texts = [], []
+        words, texts, confs = [], [], []
         for s in segments:
             texts.append(s.text.strip())
+            if getattr(s, "avg_logprob", None) is not None:
+                confs.append(math.exp(min(0.0, s.avg_logprob)))
             for w in (s.words or []):
                 words.append((w.start, w.end, w.word))
         context_text = clean_text(" ".join(t for t in texts if t).strip())
@@ -266,7 +287,8 @@ def transcribe_context(context: np.ndarray, window_start_in_context: float, lang
         wps = len(window_text.split()) / dur if window_text else 0.0
         if wps > 7.0:  # faster than any human speaker: decoder loop, not speech
             window_text, wps = "", 0.0
-        return {"window_text": window_text, "context_text": context_text, "language": getattr(info, "language", None), "words_per_sec": round(wps, 2)}
+        return {"window_text": window_text, "context_text": context_text, "language": getattr(info, "language", None), "words_per_sec": round(wps, 2),
+                "asr_conf": round(sum(confs) / len(confs), 3) if confs else None}
     except Exception:  # noqa: BLE001
         log.exception("transcription failed")
         return {"window_text": "", "context_text": "", "language": None, "words_per_sec": 0.0}
@@ -288,6 +310,7 @@ class WindowResult:
     level: str
     explain: list = field(default_factory=list)
     latency_ms: int = 0
+    asr_conf: float | None = None   # mean exp(avg_logprob) of the decoded segments: how sure Whisper was
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -324,6 +347,8 @@ class Session:
         arousal = self.baseline.arousal(pro)
         with _INFER_LOCK:
             emo = emotion_probs(window)
+            if self.language is None:
+                self.language = detect_call_language(self.context)
             tr = transcribe_context(self.context, win_start_in_ctx, self.language)
         if self.language is None and tr["language"] in ("hi", "en") and tr["window_text"]:
             self.language = tr["language"]  # detected once, then pinned: stops mid-call flips and prompt leakage
@@ -363,7 +388,7 @@ class Session:
             emotion=emo, prosody={**{k: (round(v, 4) if isinstance(v, float) else v) for k, v in pro.items()}, "arousal": round(arousal, 3)},
             transcript=tr["window_text"], transcript_redacted=redact(tr["window_text"]), language=tr["language"],
             fraud=fraud, distress=round(distress, 3), urgency=urgency, level=level_for(urgency), explain=explain,
-            latency_ms=int((time.perf_counter() - t0) * 1000),
+            latency_ms=int((time.perf_counter() - t0) * 1000), asr_conf=tr.get("asr_conf"),
         )
         self.t += len(window) / SR
         self.windows.append(res.to_dict())
@@ -399,7 +424,12 @@ def summarize(windows: list[dict], duration: float, full_text: str = "") -> dict
     max_arousal = max(w["prosody"].get("arousal", 0) for w in windows)
     call_level = 100 * (0.30 * max_distress + 0.15 * max_arousal + 0.45 * fr["score"] + 0.10 * min(1.0, len(fr["matches"]) / 8))
     sig = fr["signature"] or next((w["fraud"]["signature"] for w in windows if w["fraud"]["signature"]), None)
-    overall_u = int(round(max(peak_mean, call_level, 45 if sig else 0)))
+    # A calm caller reporting a real loss has flat affect and no scam script, so neither of the other two signals
+    # fires. A first-person loss report is itself a reason for a human to pick up soon: floor it at "medium".
+    loss_report = fr["categories"].get("victim_loss", 0) >= 0.5
+    overall_u = int(round(max(peak_mean, call_level, 45 if sig else 0, 35 if loss_report else 0)))
+    confs = [w["asr_conf"] for w in windows if w.get("asr_conf") is not None]
+    asr_conf = round(sum(confs) / len(confs), 2) if confs else None
     explain = []
     if sig:
         explain.append(f"script pattern: {sig}")
@@ -407,6 +437,8 @@ def summarize(windows: list[dict], duration: float, full_text: str = "") -> dict
     if lit:
         terms = sorted({m['term'].lower() for m in fr['matches']})[:8]
         explain.append(f"fraud cues across the call ({', '.join(lit)}): {', '.join(terms)}")
+    if loss_report:
+        explain.append("caller reports a loss in their own words: held at medium or above for a human to pick up")
     seen = set(explain)
     for w in sorted(windows, key=lambda x: -x["urgency"])[:3]:
         for e in w["explain"]:
@@ -418,6 +450,7 @@ def summarize(windows: list[dict], duration: float, full_text: str = "") -> dict
         "windows": windows,
         "overall": {"urgency": overall_u, "level": level_for(overall_u), "signature": sig,
                     "explain": explain or ["no distress or fraud cues detected"],
+                    "asr_confidence": asr_conf, "loss_report": loss_report,
                     "fraud": {"score": fr["score"], "categories": fr["categories"]},
                     "transcript": full, "transcript_redacted": redact(full),
                     "avg_latency_ms": int(sum(w["latency_ms"] for w in windows) / len(windows))},

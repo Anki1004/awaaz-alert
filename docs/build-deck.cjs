@@ -86,29 +86,29 @@ const bullets = (slide, items, x, y, w, h, opts = {}) => slide.addText(items.map
   base(s, 3, 'Feasibility and viability', 'measured on the bundled calls · python server/eval.py')
   const rows = [
     [{ text: 'sample (synthetic, edge-tts)', options: { bold: true } }, { text: 'urgency', options: { bold: true } }, { text: 'level', options: { bold: true } }, { text: 'named script', options: { bold: true } }, { text: 'latency', options: { bold: true } }],
-    ['Digital arrest — scammer', '64', 'high', 'Digital arrest', '0.75 s'],
-    ['Victim calling after loss', '65', 'high', 'Digital arrest (as described)', '0.52 s'],
-    ['Bank KYC / OTP — scammer', '54', 'medium', 'Remote-access takeover', '0.51 s'],
-    ['Part-time task scam (English)', '50', 'medium', 'Task / investment scam', '0.37 s'],
-    ['Routine status query — control', '16', 'low', '—', '0.50 s'],
+    ['Digital arrest — scammer', '64', 'high', 'Digital arrest', '0.76 s'],
+    ['Victim calling after loss', '67', 'high', 'Digital arrest (as described)', '0.57 s'],
+    ['Bank KYC / OTP — scammer', '54', 'medium', 'Remote-access takeover', '0.52 s'],
+    ['Part-time task scam (English)', '50', 'medium', 'Task / investment scam', '0.47 s'],
+    ['Routine status query — control', '16', 'low', '—', '0.57 s'],
   ]
   s.addTable(rows, { x: 0.5, y: 1.8, w: 7.6, colW: [2.7, 0.9, 0.9, 2.2, 0.9], fontFace: F.body, fontSize: 11.5, color: C.onPaper, fill: { color: C.paper }, border: { type: 'solid', color: C.paper2, pt: 0.75 }, rowH: 0.42, align: 'left', valign: 'middle' })
-  s.addText('control lowest: PASS · real-time factor 0.13–0.25 on one RTX 4060 laptop GPU', { x: 0.5, y: 4.45, w: 7.6, h: 0.3, fontFace: F.data, fontSize: 10, color: C.ok, margin: 0 })
+  s.addText('control lowest: PASS · real-time factor 0.16–0.26 on one RTX 4060 laptop GPU', { x: 0.5, y: 4.45, w: 7.6, h: 0.3, fontFace: F.data, fontSize: 10, color: C.ok, margin: 0 })
   // big stats
   const stat = (x, big, small) => { s.addText(big, { x, y: 4.95, w: 2.4, h: 0.8, fontFace: F.data, fontSize: 34, bold: true, color: C.ink, margin: 0 }); s.addText(small, { x, y: 5.75, w: 2.4, h: 0.5, fontFace: F.body, fontSize: 11, color: C.dim, margin: 0 }) }
-  stat(0.5, '4×', 'scam vs control separation')
+  stat(0.5, '3–4×', 'scam vs control separation')
   stat(3.1, '< 1 s', 'per 3-second window')
   stat(5.7, '0 bytes', 'of audio written to disk')
   // honest limits on paper
   paper(s, 8.5, 1.8, 4.3, 4.6)
   label(s, 'honest limits', 8.75, 2.0, 4, true)
   bullets(s, [
-    'Demo calls are synthetic: flat affect, distress 0.0–0.11 on every clip. They prove the pipeline and the script path, not emotion accuracy.',
-    'No public Hindi SER benchmark exists; the voice branch needs consented real recordings before any accuracy claim.',
-    'One speaker per stream — no diarisation yet.',
-    'Whisper still mishears some Hinglish; the lexicon carries ASR variants.',
-  ], 8.75, 2.4, 3.9, 3.9, { size: 11.5, color: C.onPaper })
-  s.addNotes('Be upfront: the numbers prove real-time + script separation. Emotion accuracy is unproven on Hindi — say so before the judges do.')
+    'Demo calls are synthetic (flat affect): they prove the pipeline and script path, not emotion accuracy. Real-call accuracy is unmeasured.',
+    'Stress test, 20 extra synthetic calls: on 5 unseen scams a plain keyword alarm caught 5, our fused score 2 — but it raised fewer false alerts (1/4 vs 2/4). Legit and scam calls share vocabulary.',
+    'So AwaazAlert is a ranking aid for a human operator, not a scam detector. Next step: consented, expert-labelled calls.',
+    'One speaker per stream; Whisper mishears some Hinglish.',
+  ], 8.75, 2.4, 3.9, 3.9, { size: 10.5, color: C.onPaper })
+  s.addNotes('Be upfront: the numbers prove real-time + script separation. Emotion accuracy is unproven on Hindi, and on a held-out stress set a keyword alarm out-recalled the fused score (5/5 vs 2/5) while raising more false alerts. Say so before the judges do; README has the full table.')
 }
 
 // ------------------------------------------------------------------ 4 · Impact & benefit

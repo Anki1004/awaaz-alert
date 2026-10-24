@@ -1,0 +1,90 @@
+[
+  {
+    "id": "calm-victim-loss",
+    "file": "calm-victim-loss.wav",
+    "expect": "alert",
+    "why": "Calm caller, real loss: must outrank routine despite flat affect.",
+    "text": "Namaste, kal shaam mere account se do lakh rupaye kisi ne transfer kar liye. Mujhe complaint darj karni hai, kripya reference number bata dijiye.",
+    "synthetic": true
+  },
+  {
+    "id": "calm-victim-otp",
+    "file": "calm-victim-otp.wav",
+    "expect": "alert",
+    "why": "Calm caller who already gave an OTP and lost money.",
+    "text": "Mujhe ek call aaya tha jisme unhone OTP maanga aur maine bata diya. Ab mere account se paisa nikal gaya hai.",
+    "synthetic": true
+  },
+  {
+    "id": "scared-no-keywords",
+    "file": "scared-no-keywords.wav",
+    "expect": "alert",
+    "why": "Frightened, uses none of the scam vocabulary (voice path only).",
+    "text": "Please, mujhe bahut darr lag raha hai, samajh nahi aa raha main kya karun, koi mere saath hai, please jaldi aaiye!",
+    "synthetic": true
+  },
+  {
+    "id": "customs-fee-scam",
+    "file": "customs-fee-scam.wav",
+    "expect": "alert",
+    "why": "English impersonation + payment + threat, not in the demo set.",
+    "text": "This is the customs department. A package in your name contains illegal items. You must pay a clearance fee today or you will be arrested.",
+    "synthetic": true
+  },
+  {
+    "id": "lottery-scam",
+    "file": "lottery-scam.wav",
+    "expect": "alert",
+    "why": "Prize + processing-fee script.",
+    "text": "Badhai ho, aapne KBC lottery mein pachaas lakh rupaye jeete hain. Prize lene ke liye pehle processing fee jama kijiye.",
+    "synthetic": true
+  },
+  {
+    "id": "trading-group-scam",
+    "file": "trading-group-scam.wav",
+    "expect": "alert",
+    "why": "Investment-group script.",
+    "text": "Sir, humare trading group mein join kijiye, har din paisa double hota hai, bas pehle thoda amount bhejna padega.",
+    "synthetic": true
+  },
+  {
+    "id": "legit-upi-otp",
+    "file": "legit-upi-otp.wav",
+    "expect": "no-alert",
+    "why": "Legitimate: own UPI OTP, failed payment.",
+    "text": "Namaste, mujhe bank se apne hi UPI payment ka OTP aaya tha, lekin payment fail ho gaya. Kya main dobara try kar sakta hoon?",
+    "synthetic": true
+  },
+  {
+    "id": "legit-police-address",
+    "file": "legit-police-address.wav",
+    "expect": "no-alert",
+    "why": "Legitimate: police station address for passport verification.",
+    "text": "Mujhe passport verification ke liye police station ka address aur timing chahiye.",
+    "synthetic": true
+  },
+  {
+    "id": "legit-courier",
+    "file": "legit-courier.wav",
+    "expect": "no-alert",
+    "why": "Legitimate: courier tracking says customs.",
+    "text": "Mera courier Delhi se aana tha, tracking par dikha raha hai ki parcel customs mein ruka hua hai. Kitna time lagega, kya aap bata sakte hain?",
+    "synthetic": true
+  },
+  {
+    "id": "legit-kyc-block",
+    "file": "legit-kyc-block.wav",
+    "expect": "no-alert",
+    "why": "Legitimate: KYC done, only asking about block.",
+    "text": "Mera bank KYC update ho chuka hai, branch mein documents bhi jama kar diye the. Bas confirm karna tha ki account block toh nahi hoga.",
+    "synthetic": true
+  },
+  {
+    "id": "legit-helpline-hours",
+    "file": "legit-helpline-hours.wav",
+    "expect": "no-alert",
+    "why": "Easy negative.",
+    "text": "Hello, I wanted to know the working hours of the cyber crime helpline.",
+    "synthetic": true
+  }
+]

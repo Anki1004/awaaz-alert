@@ -161,7 +161,7 @@ export default function App() {
             <div className="col-span-12 xl:col-span-5 flex flex-col gap-3 min-h-0">
               <div className="bezel p-3">
                 <div className="flex items-start gap-3">
-                  <div className="shrink-0"><Needle value={selected !== null && current ? current.urgency : overall.urgency} level={selected !== null && current ? current.level : overall.level} size={190} caption={selected !== null ? 'window' : 'call urgency'} /></div>
+                  <div className="shrink-0"><Needle value={selected !== null && current ? current.urgency : overall.urgency} level={selected !== null && current ? current.level : overall.level} size={190} caption={selected !== null ? 'window' : 'triage priority'} /></div>
                   <div className="min-w-0 flex-1">
                     <div className="label mb-1.5">Why this line lit up</div>
                     <ul className="space-y-1 text-[13px] leading-snug">{explain.map((e, i) => <li key={i} className="flex gap-2"><span className="text-[var(--color-ink)]">—</span><span>{e}</span></li>)}</ul>

@@ -42,6 +42,9 @@ PATTERNS = {
         (r"(एनी ?डेस्क|एनिडेस्क|टीम ?व्यूअर|स्क्रीन ?शेयर|स्क्रीन ?शेअर|स्क्रींट शेएर|ऐप डाउनलोड|एप डाउनलोड)", 1.0),
         (r"\b(lottery|lucky draw|prize|kbc|jackpot|task|part[- ]time job|investment|trading tips|double)\b", 0.7),
         (r"(लॉटरी|लकी ड्रॉ|इनाम|केबीसी|टास्क|पार्ट टाइम|निवेश|डबल)", 0.7),
+        # investment-group / guaranteed-return pitches
+        (r"\b(trading|forex|stock tips?|guaranteed (returns?|profit)|paisa double|paise double|double (paisa|paise|money))\b", 0.8),
+        (r"(ट्रेडिंग|फॉरेक्स|गारंटीड|पैसा डबल|पैसे डबल|पैसा दोगुना|पैसे दोगुने|दोगुना|दुगना)", 0.8),
     ],
     "urgency": [
         (r"\b(abhi|turant|jaldi|immediately|urgent|right now|within|2 ghante|10 minute|aaj hi|last chance|deadline)\b", 0.8),
@@ -56,6 +59,13 @@ PATTERNS = {
         (r"(पैसे कट|पैसे निकल|पैसे चले गए|पैसे ट्रांसफर कर दिए|अकाउंट खाली|अकाउंट से .{0,20}(निकल|कट)|लूट|ठग|धोखा|फ्रॉड हो गया|फ्राड हो गया|स्कैम)", 1.0),
         (r"\b(bacha ?lo|help (karo|kijiye)|please|madad|kya karu|kya karoon|ro (raha|rahi))\b", 0.6),
         (r"(बचा लो|बचा लीजिए|मदद|हेल्प|क्या करूं|क्या करूँ|क्या करूँगी|रो रह|डर गय|डर लग)", 0.6),
+        # first-person loss REPORTS (past tense only: a scammer demanding "paisa transfer karna hoga" is not a report)
+        (r"(paise?|paisa|rupa?ye|rupees|lakh|hazaa?r).{0,40}(nikal gaye|nikal gaya|nikal gayi|kat gaye|kat gaya|chale gaye|ud gaye|transfer kar (diye|diya|liye|liya))", 1.0),
+        (r"kisi ne.{0,40}(transfer kar (diye|diya|liye|liya)|nikal li(ye|ya)|le li(ye|ya)|churaa?ya|kaat li(ye|ya))", 1.0),
+        (r"otp.{0,30}(bata diya|share kar diya|de diya|bhej diya|dediya)", 1.0),
+        (r"(पैसे|पैसा|रुपये|रुपए|रुपै|लाख|हज़ार|हजार).{0,40}(निकल गए|निकल गया|निकल गई|कट गए|कट गया|चले गए|उड़ गए|ट्रांसफर कर (दिए|दिया|लिए|लिया))", 1.0),
+        (r"किसी ने.{0,40}(ट्रांसफर कर (दिए|दिया|लिए|लिया)|निकाल (लिए|लिया)|ले (लिए|लिया)|चुरा|काट (लिए|लिया))", 1.0),
+        (r"(ओटीपी|ओ ?टी ?पी|OTP).{0,30}(बता दिया|शेयर कर दिया|दे दिया|भेज दिया)", 1.0),
     ],
 }
 

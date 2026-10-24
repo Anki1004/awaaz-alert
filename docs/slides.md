@@ -16,11 +16,11 @@
 |---|---|---|---|---|
 | Digital arrest (scammer) | 64 | high | Digital arrest | 0.75 s |
 | Bank KYC / OTP (scammer) | 54 | medium | Remote-access takeover | 0.51 s |
-| Victim calling after loss | 65 | high | Digital arrest (as described) | 0.52 s |
+| Victim calling after loss | 67 | high | Digital arrest (as described) | 0.52 s |
 | Part-time task scam (English) | 50 | medium | Task / investment scam | 0.37 s |
 | Routine query (control) | 16 | low | — | 0.50 s |
 - Runs on one laptop GPU (RTX 4060): real-time factor 0.13–0.25. CPU-only works with whisper-small.
-- Honest limits: demo calls are synthetic (flat affect) — they prove the pipeline and the script path, not emotion accuracy; no speaker diarisation yet; whisper mishears some Hinglish.
+- Honest limits: demo calls are synthetic (flat affect) — they prove the pipeline and the script path, not emotion accuracy; on 20 extra synthetic stress calls a plain keyword alarm out-recalled the fused score (5/5 vs 2/5 on the held-out five) while raising more false alerts (2/4 vs 1/4) — AwaazAlert is a ranking aid for a human, not a detector; no speaker diarisation yet; whisper mishears some Hinglish.
 
 ## 4 · Impact and benefit
 - Operator sees *why* a line lit up (measured cues), not a black-box number → faster triage of real victims, fewer missed "money still in transit" calls where minutes matter (freeze requests to banks).
