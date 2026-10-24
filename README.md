@@ -65,7 +65,20 @@ python server/eval.py
 
 ## Evaluation
 
-_Filled from `python server/eval.py` on the bundled samples — see "Results" below after a run._
+| sample (synthetic, edge-tts) | kind | urgency | level | named script | fraud | avg latency / 3 s window | RTF |
+|---|---|---|---|---|---|---|---|
+| Digital arrest — scammer side | fraudster | **64** | high | Digital arrest | 0.56 | 752 ms | 0.25 |
+| Victim calling 1930 after loss | victim | **65** | high | Digital arrest (described by victim) | 0.79 | 518 ms | 0.18 |
+| Bank KYC / OTP scam | fraudster | **54** | medium | Remote-access takeover | 0.79 | 506 ms | 0.18 |
+| Part-time task / investment scam (English) | fraudster | **50** | medium | Task / investment scam | 0.65 | 372 ms | 0.13 |
+| Routine status query (control) | normal | **16** | low | — | 0.07 | 501 ms | 0.18 |
+
+`python server/eval.py` → **control lowest: PASS**. RTX 4060 laptop GPU, faster-whisper large-v3-turbo fp16 + emotion2vec+ base.
+Stage profile on one 3 s window: whisper ≈ 400 ms, emotion2vec ≈ 70 ms, prosody ≈ 5 ms.
+
+What this table proves: the pipeline runs in real time (RTF < 0.3) and the **script path separates scam calls from a
+calm control by ~4×**. What it does not prove: emotion accuracy — the TTS voices are flat (distress 0.0–0.11 on every
+clip), so the acoustic branch contributes almost nothing here. That branch needs consented real recordings.
 
 ## Honest limitations
 

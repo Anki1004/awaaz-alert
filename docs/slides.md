@@ -7,19 +7,19 @@
 
 ## 2 · Technical approach
 - 16 kHz audio → 3 s windows with a 9 s rolling context.
-- **Voice:** emotion2vec+ (FunASR) → fear/sad/anger probabilities. **Prosody:** librosa pitch σ, energy, voicing, expressed relative to *this caller's own baseline*. **Words:** faster-whisper large-v3-turbo (hi/en, language pinned, domain vocabulary prompt) → **Hinglish fraud-script lexicon** (6 categories, Devanagari + romanised) → named scam signature.
+- **Voice:** emotion2vec+ (FunASR) → fear/sad/anger probabilities. **Prosody:** librosa pitch σ, energy, voicing, expressed relative to *this caller's own baseline*. **Words:** faster-whisper large-v3-turbo (hi/en, language detected once then pinned, repetition guards; no vocabulary prompt — it leaked words into calm calls) → **Hinglish fraud-script lexicon** (6 categories, Devanagari + romanised) → named scam signature.
 - urgency = 0.40·distress + 0.20·arousal + 0.30·fraud + 0.10·speech-rate; call level = max(peak-weighted windows, whole-transcript scan); named script ⇒ at least *medium*.
 - FastAPI + WebSocket streaming; React dashboard. Audio stays in memory; transcript PII-redacted by default.
 
 ## 3 · Feasibility and viability
 | sample (synthetic, edge-tts) | urgency | level | named script | latency / 3 s window |
 |---|---|---|---|---|
-| Digital arrest (scammer) | 65 | high | Digital arrest | ~1.1 s |
-| Bank KYC / OTP (scammer) | 65 | high | Remote-access takeover | ~0.9 s |
-| Victim calling after loss | 59 | medium | — (victim side) | ~1.3 s |
-| Part-time task scam (English) | 50 | medium | Task / investment scam | ~0.4 s |
-| Routine query (control) | 17 | low | — | ~1.3 s |
-- Runs on one laptop GPU (RTX 4060): real-time factor ≈ 0.45. CPU-only works with whisper-small.
+| Digital arrest (scammer) | 64 | high | Digital arrest | 0.75 s |
+| Bank KYC / OTP (scammer) | 54 | medium | Remote-access takeover | 0.51 s |
+| Victim calling after loss | 65 | high | Digital arrest (as described) | 0.52 s |
+| Part-time task scam (English) | 50 | medium | Task / investment scam | 0.37 s |
+| Routine query (control) | 16 | low | — | 0.50 s |
+- Runs on one laptop GPU (RTX 4060): real-time factor 0.13–0.25. CPU-only works with whisper-small.
 - Honest limits: demo calls are synthetic (flat affect) — they prove the pipeline and the script path, not emotion accuracy; no speaker diarisation yet; whisper mishears some Hinglish.
 
 ## 4 · Impact and benefit
