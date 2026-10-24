@@ -16,23 +16,25 @@ const URL = process.env.APP_URL || 'http://127.0.0.1:5173'
 const browser = await chromium.launch(process.env.PW_CHROME ? { executablePath: process.env.PW_CHROME } : {})
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, recordVideo: { dir: tmp, size: { width: 1440, height: 900 } }, colorScheme: 'dark' })
 const page = await ctx.newPage()
+const t0 = Date.now(); const marks = {}; const mark = (k) => { marks[k] = (Date.now() - t0) / 1000 }
 const pause = (ms) => page.waitForTimeout(ms)
 
 await page.goto(URL)
 await page.getByText(/^ready · /).waitFor({ timeout: 120000 })
-await pause(2500)                                            // 0:00 standby, banner visible
-await page.getByRole('button', { name: /▶ Digital arrest/ }).click()   // 0:03 replay at 1x (~42 s)
-await pause(34000)                                           // let the stamp land
+await pause(17500)                                           // standby, banner visible (intro voice-over)
+mark('replay'); await page.getByRole('button', { name: /▶ Digital arrest/ }).click()   // 0:03 replay at 1x (~42 s)
+await pause(24000)                                           // let the stamp land
 await page.getByLabel(/Redact personal details/).click()     // show cues underline
 await pause(6000)
 await page.getByText('Standby').waitFor({ timeout: 90000 })
 await pause(1500)
-await page.getByRole('button', { name: 'Score all samples' }).click()  // queue fills
-await pause(26000)
+mark('score'); await page.getByRole('button', { name: 'Score all samples' }).click()  // queue fills
+await pause(16000)
 // inspect a window on the strip
 const dots = page.locator('svg circle')
 if (await dots.count() > 5) { await dots.nth(5).click(); await pause(4000); await page.getByText('follow the pen').click() }
-await pause(2500)
+await pause(18000)
+console.log('MARKS ' + JSON.stringify(marks))
 await ctx.close(); await browser.close()
 const webm = readdirSync(tmp).find((f) => f.endsWith('.webm'))
 const dst = path.join(out, 'demo-raw.webm'); renameSync(path.join(tmp, webm), dst)
