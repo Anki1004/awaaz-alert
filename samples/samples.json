@@ -1,0 +1,78 @@
+[
+  {
+    "id": "digital-arrest",
+    "file": "digital-arrest.wav",
+    "title": "Digital arrest — scammer side",
+    "kind": "fraudster",
+    "note": "Classic 'CBI officer' script: impersonation + threat + secrecy + payment.",
+    "duration": 42.3,
+    "synthetic": true,
+    "script": [
+      "Namaste, main CBI Mumbai cyber cell se Inspector Rajesh Verma bol raha hoon.",
+      "Aapke naam se ek parcel pakda gaya hai jisme drugs aur fake passport hain.",
+      "Aapke Aadhaar card par money laundering ka case darj hai, arrest warrant nikal chuka hai.",
+      "Aap abhi digital arrest mein hain. Video call par rahiye, phone mat kaatna, kisi ko mat batana.",
+      "Verification ke liye aapko apna account ka paisa RBI ke safe account mein transfer karna hoga, abhi, turant.",
+      "Agar do ghante mein transfer nahi hua toh police aapke ghar aa jayegi."
+    ]
+  },
+  {
+    "id": "victim-distress",
+    "file": "victim-distress.wav",
+    "title": "Victim calling 1930 after loss",
+    "kind": "victim",
+    "note": "Victim-side distress words + loss report; should score high on victim_loss and urgency.",
+    "duration": 31.3,
+    "synthetic": true,
+    "script": [
+      "Hello, 1930? Please meri madad kijiye, mere saath fraud ho gaya hai.",
+      "Kisi ne CBI officer bankar video call kiya, bola digital arrest hai, aur maine darr ke maare paise transfer kar diye.",
+      "Mere account se do lakh pachaas hazaar rupaye nikal gaye hain, abhi dus minute pehle.",
+      "Main bahut dar gayi hoon, kya karoon? Paisa wapas aa sakta hai kya? Please bacha lijiye."
+    ]
+  },
+  {
+    "id": "kyc-otp",
+    "file": "kyc-otp.wav",
+    "title": "Bank KYC / OTP scam",
+    "kind": "fraudster",
+    "note": "Bank impersonation + account block threat + OTP request.",
+    "duration": 28.2,
+    "synthetic": true,
+    "script": [
+      "Sir, main SBI head office se bol raha hoon. Aapka KYC pending hai.",
+      "Aaj raat baarah baje aapka account block ho jayega aur ATM card bhi band ho jayega.",
+      "KYC update ke liye abhi aapke phone par ek OTP aaya hoga, woh OTP mujhe bata dijiye.",
+      "Ya phir AnyDesk app download karke screen share kijiye, hum khud kar denge."
+    ]
+  },
+  {
+    "id": "normal-query",
+    "file": "normal-query.wav",
+    "title": "Routine query — low priority",
+    "kind": "normal",
+    "note": "Control sample: calm informational call, should stay low.",
+    "duration": 19.6,
+    "synthetic": true,
+    "script": [
+      "Namaste, main yeh jaanna chahti thi ki online complaint ka status kaise check karte hain.",
+      "Maine pichle hafte portal par complaint darj ki thi, uska acknowledgement number mere paas hai.",
+      "Koi jaldi nahi hai, bas process samajhna tha. Dhanyavaad."
+    ]
+  },
+  {
+    "id": "task-scam",
+    "file": "task-scam.wav",
+    "title": "Part-time task / investment scam",
+    "kind": "fraudster",
+    "note": "English-Hinglish mix: payment + urgency, Telegram task scam.",
+    "duration": 29.3,
+    "synthetic": true,
+    "script": [
+      "Hi, I am calling from the HR team. You have been selected for a part time job, earn five thousand rupees daily.",
+      "Just complete simple tasks on Telegram, like YouTube video likes, and double your investment.",
+      "First you pay a small security deposit of two thousand through UPI, it is fully refundable.",
+      "Offer is only valid today, please transfer immediately, last chance."
+    ]
+  }
+]

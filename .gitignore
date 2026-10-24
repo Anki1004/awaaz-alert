@@ -1,0 +1,15 @@
+# node
+web/node_modules/
+web/dist/
+# python
+__pycache__/
+*.pyc
+.venv/
+# runtime
+server.log
+*.log
+# model caches never belong in git
+.cache/
+# OS
+.DS_Store
+Thumbs.db
