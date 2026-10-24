@@ -89,9 +89,7 @@ async def ws_live(ws: WebSocket):
     await ws.accept()
     await _send(ws, {"type": "hello", "window_s": WINDOW_S, "status": STATUS})
     buf = np.zeros(0, dtype=np.float32)
-    t_cursor = 0.0
-    language = None
-    windows: list[dict] = []
+    session = P.Session(None, WINDOW_S)
     loop = asyncio.get_event_loop()
     need = int(WINDOW_S * P.SR)
     try:
@@ -105,22 +103,18 @@ async def ws_live(ws: WebSocket):
                 except json.JSONDecodeError:
                     cmd = {}
                 if cmd.get("cmd") == "lang":
-                    language = cmd.get("value") or None
+                    session.language = cmd.get("value") or None
                 elif cmd.get("cmd") == "flush" and len(buf) >= P.SR * 0.6:
                     chunk, buf = buf, np.zeros(0, dtype=np.float32)
-                    res = await loop.run_in_executor(None, P.analyze_window, chunk, t_cursor, language)
-                    t_cursor += len(chunk) / P.SR
-                    windows.append(res.to_dict())
-                    await _send(ws, {"type": "window", "data": res.to_dict(), "overall": P.summarize(windows, t_cursor)["overall"]})
+                    res = await loop.run_in_executor(None, session.feed, chunk)
+                    await _send(ws, {"type": "window", "data": res.to_dict(), "overall": session.overall()["overall"]})
                 elif cmd.get("cmd") == "reset":
-                    buf = np.zeros(0, dtype=np.float32); t_cursor = 0.0; windows = []
+                    buf = np.zeros(0, dtype=np.float32); session = P.Session(session.language, WINDOW_S)
                     await _send(ws, {"type": "reset"})
             while len(buf) >= need:
                 chunk, buf = buf[:need], buf[need:]
-                res = await loop.run_in_executor(None, P.analyze_window, chunk, t_cursor, language)
-                t_cursor += WINDOW_S
-                windows.append(res.to_dict())
-                await _send(ws, {"type": "window", "data": res.to_dict(), "overall": P.summarize(windows, t_cursor)["overall"]})
+                res = await loop.run_in_executor(None, session.feed, chunk)
+                await _send(ws, {"type": "window", "data": res.to_dict(), "overall": session.overall()["overall"]})
     except WebSocketDisconnect:
         pass
     except Exception:  # noqa: BLE001
@@ -142,21 +136,20 @@ async def ws_replay(ws: WebSocket, sample: str = Query(...), speed: float = Quer
     audio = await loop.run_in_executor(None, P.decode_to_pcm16k, p.read_bytes())
     await _send(ws, {"type": "hello", "window_s": WINDOW_S, "duration": len(audio) / P.SR, "status": STATUS})
     need = int(WINDOW_S * P.SR)
-    windows: list[dict] = []
+    session = P.Session(None, WINDOW_S)
     try:
         for i in range(0, len(audio), need):
             chunk = audio[i:i + need]
             if len(chunk) < P.SR * 0.6:
                 break
             t0 = loop.time()
-            res = await loop.run_in_executor(None, P.analyze_window, chunk, i / P.SR, None)
-            windows.append(res.to_dict())
-            await _send(ws, {"type": "window", "data": res.to_dict(), "overall": P.summarize(windows, (i + len(chunk)) / P.SR)["overall"]})
+            res = await loop.run_in_executor(None, session.feed, chunk)
+            await _send(ws, {"type": "window", "data": res.to_dict(), "overall": session.overall()["overall"]})
             # pace to real time minus the time already spent analysing
             wait = (len(chunk) / P.SR) / max(0.1, speed) - (loop.time() - t0)
             if wait > 0:
                 await asyncio.sleep(wait)
-        await _send(ws, {"type": "done", "overall": P.summarize(windows, len(audio) / P.SR)["overall"]})
+        await _send(ws, {"type": "done", "overall": session.overall()["overall"]})
     except WebSocketDisconnect:
         pass
 

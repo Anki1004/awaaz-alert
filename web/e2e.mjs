@@ -24,7 +24,7 @@ page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + 
 
 try {
   await page.goto(URL)
-  await page.getByText('models ready').waitFor({ timeout: 120000 })
+  await page.getByText(/^ready · /).waitFor({ timeout: 120000 })
   ok('server reports models ready', true)
   await page.screenshot({ path: path.join(shots, '01-standby.png') })
 
@@ -32,43 +32,43 @@ try {
   const row = page.getByRole('button', { name: /▶ Digital arrest/ })
   await row.waitFor()
   await page.getByRole('button', { name: '3×' }).first().click()
-  await page.getByText(/replay/).first().waitFor()
+  await page.getByText(/^Replay$/).first().waitFor()
   // wait until at least 4 windows are on the timeline and the gauge is non-zero
   await page.waitForFunction(() => {
-    const t = document.querySelector('svg text')
+    const t = document.querySelector('[data-testid="urgency-value"]')
     return t && Number(t.textContent) > 0
   }, null, { timeout: 90000 })
   await page.waitForTimeout(12000)
-  const gauge = Number(await page.locator('svg text').first().textContent())
+  const gauge = Number(await page.getByTestId('urgency-value').textContent())
   ok('urgency gauge rises on the digital-arrest replay', gauge >= 35, `gauge=${gauge}`)
-  const why = await page.getByText('Why this score').locator('..').textContent()
+  const why = await page.getByText('Why this line lit up').locator('..').textContent()
   ok('"Why this score" names fraud cues or a script pattern', /fraud cues|Script pattern|impersonation|threat/i.test(why || ''), (why || '').slice(0, 160))
-  const transcript = await page.locator('p.leading-relaxed').allTextContents()
+  const transcript = await page.locator('p.tline').allTextContents()
   ok('transcript is streaming', transcript.join(' ').trim().length > 20, transcript.join(' ').slice(0, 100))
   const marksRedacted = await page.locator('mark.cue').count()
   ok('redaction ON hides highlighted raw text (no marks)', marksRedacted === 0, `marks=${marksRedacted}`)
-  await page.getByLabel(/redact PII/).click()
+  await page.getByLabel(/Redact personal details/).click()
   await page.waitForTimeout(500)
   const marks = await page.locator('mark.cue').count()
   ok('redaction OFF shows highlighted fraud cues', marks > 0, `marks=${marks}`)
   await page.screenshot({ path: path.join(shots, '02-replay-digital-arrest.png'), fullPage: true })
 
   // queue has the call with a non-zero score
-  const q = await page.locator('aside button .mono').first().textContent()
+  const q = await page.locator('.jack .data').first().textContent()
   ok('queue shows the call with its urgency', /\d+|…/.test(q || ''), q || '')
 
   // wait for replay to finish (done -> standby)
-  await page.getByText('standby').waitFor({ timeout: 120000 })
+  await page.getByText('Standby').waitFor({ timeout: 120000 })
   ok('replay completes and returns to standby', true)
 
   // control sample should score low
   await page.getByRole('button', { name: '3×' }).nth(3).click()
-  await page.getByText('standby').waitFor({ timeout: 120000 })
-  const low = Number(await page.locator('svg text').first().textContent())
+  await page.getByText('Standby').waitFor({ timeout: 120000 })
+  const low = Number(await page.getByTestId('urgency-value').textContent())
   ok('normal-query control stays low (<35)', low < 35, `gauge=${low}`)
 
   // queue ordering: digital arrest above normal query
-  const titles = await page.locator('aside button span.font-medium').allTextContents()
+  const titles = await page.locator('.jack .title').allTextContents()
   const iDA = titles.findIndex((t) => /Digital arrest/.test(t)), iNQ = titles.findIndex((t) => /Routine/.test(t))
   ok('queue sorts the scam call above the routine call', iDA !== -1 && iNQ !== -1 && iDA < iNQ, titles.join(' | '))
   await page.screenshot({ path: path.join(shots, '03-queue.png'), fullPage: true })

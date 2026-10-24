@@ -16,10 +16,10 @@ import re
 PATTERNS = {
     "impersonation": [
         (r"\b(cbi|c\.b\.i|ed\b|enforcement|narcotics|ncb|trai|rbi|sebi|customs|income tax|police|crime branch|cyber cell|interpol)\b", 1.0),
-        (r"(सीबीआई|पुलिस|क्राइम ब्रांच|कस्टम|आरबीआई|ट्राई|नारकोटिक्स|इनकम टैक्स)", 1.0),
+        (r"(सीबीआई|सी ?बी ?आई|पुलिस|पलिस|पोलिस|क्राइम ब्रांच|साइबर सेल|साईबर सेल|कस्टम|आरबीआई|ट्राई|नारकोटिक्स|इनकम टैक्स|इंस्पेक्टर|अफसर|ऑफिसर)", 1.0),
         (r"\b(bank (se|manager|officer)|sbi|hdfc|icici|axis|pnb|kotak)\b", 0.7),
         (r"\b(fedex|dhl|blue ?dart|courier|parcel|package)\b", 0.8),
-        (r"(कूरियर|पार्सल|पैकेज)", 0.8),
+        (r"(कूरियर|पार्सल|पैकेज|फेडेक्स)", 0.8),
         (r"\b(digital arrest|video call (par|pe|me|mein)|skype|arrest)\b", 1.0),
         (r"(डिजिटल अरेस्ट|गिरफ्तार|वीडियो कॉल)", 1.0),
     ],
@@ -27,19 +27,19 @@ PATTERNS = {
         (r"\b(arrest|warrant|case (darj|register|file)|fir\b|jail|court|summon|non[- ]?bailable)\b", 1.0),
         (r"(गिरफ्तार|वारंट|केस|जेल|कोर्ट|समन|एफआईआर)", 1.0),
         (r"\b(account|sim|aadhaar|aadhar|card) (block|suspend|band|freeze)", 0.9),
-        (r"(ब्लॉक|सस्पेंड|बंद हो जाएगा|फ्रीज)", 0.9),
+        (r"(ब्लॉक|ब्लाक|सस्पेंड|बंद हो जाएगा|बंद हो जायेगा|फ्रीज|केवाईसी|केवाइसी|केवायसी|के ?वा[ईइय] ?सी)", 0.9),
         (r"\b(drugs|narcotics|money laundering|illegal|terror|hawala)\b", 0.9),
-        (r"(ड्रग्स|मनी लॉन्ड्रिंग|गैरकानूनी|हवाला)", 0.9),
+        (r"(ड्रग्स|डरग्स|ड्रग|मनी ?लॉन्ड्रिंग|मनी ?लांड्रिंग|गैरकानूनी|हवाला|फेक पासपोर्ट|नकली पासपोर्ट)", 0.9),
     ],
     "payment": [
         (r"\b(otp|one time password|pin\b|cvv|password)\b", 1.0),
-        (r"(ओटीपी|पासवर्ड|पिन)", 1.0),
+        (r"(ओटीपी|ओ ?टी ?पी|ओटिपी|पासवर्ड|पिन नंबर|सीवीवी)", 1.0),
         (r"\b(upi|paytm|phonepe|google ?pay|gpay|transfer|rtgs|neft|imps)\b", 0.8),
         (r"(ट्रांसफर|यूपीआई|पेटीएम|फोनपे)", 0.8),
         (r"\b(gift ?card|crypto|bitcoin|usdt|wallet|verification (fee|amount)|processing fee|security deposit|refundable)\b", 0.9),
         (r"(गिफ्ट कार्ड|क्रिप्टो|वॉलेट|वेरिफिकेशन फीस|प्रोसेसिंग फीस|सिक्योरिटी डिपॉजिट|रिफंड)", 0.9),
         (r"\b(anydesk|teamviewer|quick ?support|screen share|app (install|download) kar)\b", 1.0),
-        (r"(एनीडेस्क|स्क्रीन शेयर|ऐप डाउनलोड)", 1.0),
+        (r"(एनी ?डेस्क|एनिडेस्क|टीम ?व्यूअर|स्क्रीन ?शेयर|स्क्रीन ?शेअर|स्क्रींट शेएर|ऐप डाउनलोड|एप डाउनलोड)", 1.0),
         (r"\b(lottery|lucky draw|prize|kbc|jackpot|task|part[- ]time job|investment|trading tips|double)\b", 0.7),
         (r"(लॉटरी|लकी ड्रॉ|इनाम|केबीसी|टास्क|पार्ट टाइम|निवेश|डबल)", 0.7),
     ],
@@ -49,13 +49,13 @@ PATTERNS = {
     ],
     "secrecy": [
         (r"\b(kisi ko (mat|nahi) bata|phone (mat|nahi) (kaat|rakh)|line (par|pe) (raho|rahiye)|confidential|secret|gupt)\b", 1.0),
-        (r"(किसी को मत बता|फोन मत काट|लाइन पर रह|गोपनीय|गुप्त)", 1.0),
+        (r"(किसी को मत बता|किसी को नहीं बता|फोन मत काट|फ़ोन मत काट|फुन म[ैे]द कात|लाइन पर रह|वीडियो कॉल पर रह|गोपनीय|गुप्त)", 1.0),
     ],
     "victim_loss": [
         (r"\b(paise? (kat|chale|nikal|gaye|gaya|cut)|account (khali|empty)|loot|fraud ho gaya|thag|dhokha|scam ho gaya)\b", 1.0),
-        (r"(पैसे कट|पैसे निकल|पैसे चले गए|अकाउंट खाली|लूट|ठग|धोखा|फ्रॉड हो गया)", 1.0),
+        (r"(पैसे कट|पैसे निकल|पैसे चले गए|पैसे ट्रांसफर कर दिए|अकाउंट खाली|अकाउंट से .{0,20}(निकल|कट)|लूट|ठग|धोखा|फ्रॉड हो गया|फ्राड हो गया|स्कैम)", 1.0),
         (r"\b(bacha ?lo|help (karo|kijiye)|please|madad|kya karu|kya karoon|ro (raha|rahi))\b", 0.6),
-        (r"(बचा लो|मदद|क्या करूं|क्या करूँ|रो रह)", 0.6),
+        (r"(बचा लो|बचा लीजिए|मदद|हेल्प|क्या करूं|क्या करूँ|क्या करूँगी|रो रह|डर गय|डर लग)", 0.6),
     ],
 }
 

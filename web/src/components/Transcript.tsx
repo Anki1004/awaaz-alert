@@ -17,18 +17,18 @@ function Highlighted({ text, matches }: { text: string; matches: WindowResult['f
 }
 
 export function Transcript({ windows, selected, redact }: { windows: WindowResult[]; selected: number | null; redact: boolean }) {
-  if (!windows.length) return <div className="p-4 text-sm text-[var(--color-ink-mute)]">Transcript appears here as the call is analysed.</div>
+  if (!windows.length) return <div className="p-4 text-[13px] text-[var(--color-text-mute)]">Words appear here as the pen moves.</div>
   return (
     <div className="p-3 space-y-2 overflow-y-auto h-full">
       {windows.map((w, i) => {
         const text = redact ? w.transcript_redacted : w.transcript
         // offsets in matches refer to the raw transcript; when redacted, lengths may shift, so highlight only in raw mode
         return (
-          <div key={i} className={`flex gap-3 rounded-md px-2 py-1.5 ${selected === i ? 'bg-white/5' : ''}`}>
-            <span className="mono text-[11px] text-[var(--color-ink-mute)] w-10 shrink-0 pt-[3px]">{Math.floor(w.t_start)}s</span>
-            <span className={`mono text-[10px] w-9 shrink-0 pt-[3px] lvl-${w.level}`}>{w.urgency}</span>
-            <p className="text-[14px] leading-relaxed flex-1">
-              {text ? (redact ? text : <Highlighted text={text} matches={w.fraud.matches} />) : <span className="text-[var(--color-ink-mute)] italic">…no speech</span>}
+          <div key={i} className={`flex gap-3 px-2 py-1 border-l-2 ${selected === i ? 'border-[var(--color-carbon)] bg-[var(--color-console-3)]' : 'border-transparent'}`}>
+            <span className="data text-[11px] text-[var(--color-text-mute)] w-10 shrink-0 pt-[4px]">{Math.floor(w.t_start)}s</span>
+            <span className={`data text-[10px] w-8 shrink-0 pt-[4px] lvl-${w.level}`}>{w.urgency}</span>
+            <p className="tline text-[15px] leading-[1.7] flex-1">
+              {text ? (redact ? text : <Highlighted text={text} matches={w.fraud.matches} />) : <span className="text-[var(--color-text-mute)] italic">— no speech —</span>}
             </p>
           </div>
         )

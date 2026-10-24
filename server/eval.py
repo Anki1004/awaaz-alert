@@ -28,6 +28,7 @@ def post_file(path: Path) -> dict:
 
 
 def main():
+    sys.stdout.reconfigure(encoding="utf-8")
     meta = json.loads((SAMPLES / "samples.json").read_text(encoding="utf-8"))
     rows = []
     for s in meta:
