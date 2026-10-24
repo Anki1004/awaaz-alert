@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { api, wsUrl, type Health, type Overall, type Sample, type WindowResult, type WsEvent } from './api'
+import { api, closeReason, getKey, openWs, setKey, type Health, type Overall, type Sample, type Verdict, type WindowResult, type WsEvent } from './api'
 import { startMic, type MicHandle } from './audio'
 import { StripChart } from './components/StripChart'
 import { Needle, Vu } from './components/Meter'
@@ -24,6 +24,9 @@ export default function App() {
   const [queue, setQueue] = useState<CallRow[]>([])
   const [activeId, setActiveId] = useState('live')
   const [err, setErr] = useState<string | null>(null)
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [fb, setFb] = useState<string | null>(null)
+  const [key, setKeyState] = useState(getKey())
   const wsRef = useRef<WebSocket | null>(null)
   const micRef = useRef<MicHandle | null>(null)
   const [, tick] = useState(0)
@@ -36,20 +39,22 @@ export default function App() {
 
   const upsert = useCallback((row: CallRow) => setQueue((q) => [...q.filter((r) => r.id !== row.id), row].sort((a, b) => (b.overall?.urgency ?? -1) - (a.overall?.urgency ?? -1))), [])
   const stopAll = useCallback(() => { wsRef.current?.close(); wsRef.current = null; micRef.current?.stop(); micRef.current = null; setMode('idle') }, [])
-  const resetView = () => { setWindows([]); setOverall(EMPTY); setSelected(null); setErr(null) }
+  const resetView = () => { setWindows([]); setOverall(EMPTY); setSelected(null); setErr(null); setSessionId(null); setFb(null) }
 
   const onEvent = (id: string, title: string, kind: string) => (ev: WsEvent) => {
     if (ev.type === 'window') { setWindows((w) => { const next = [...w, ev.data]; upsert({ id, title, kind, overall: ev.overall, windows: next, running: true }); return next }); setOverall(ev.overall) }
     else if (ev.type === 'done') { setOverall(ev.overall); setQueue((q) => q.map((r) => (r.id === id ? { ...r, overall: ev.overall, running: false } : r))); setMode('idle') }
+    else if (ev.type === 'hello') setSessionId(ev.session ?? null)
+    else if (ev.type === 'lag') setErr(`Analysis fell behind real time; ${ev.dropped_s}s of audio was skipped.`)
     else if (ev.type === 'error') setErr(ev.message)
   }
 
   const startLive = async () => {
     stopAll(); resetView(); setActiveId('live')
     try {
-      const ws = new WebSocket(wsUrl('/ws/live')); wsRef.current = ws
+      const ws = openWs('/ws/live'); wsRef.current = ws
       ws.onmessage = (m) => onEvent('live', 'Line 1 · live', 'live')(JSON.parse(m.data))
-      ws.onclose = () => { micRef.current?.stop(); micRef.current = null; setMode((mo) => (mo === 'live' ? 'idle' : mo)) }
+      ws.onclose = (e) => { const why = closeReason(e.code); if (why) setErr(why); micRef.current?.stop(); micRef.current = null; setMode((mo) => (mo === 'live' ? 'idle' : mo)) }
       await new Promise<void>((res, rej) => { ws.onopen = () => res(); ws.onerror = () => rej(new Error('Could not reach the analysis server.')) })
       micRef.current = await startMic((pcm) => { if (ws.readyState === 1) ws.send(pcm) })
       upsert({ id: 'live', title: 'Line 1 · live', kind: 'live', overall: null, windows: [], running: true }); setMode('live')
@@ -58,7 +63,7 @@ export default function App() {
   const endLive = () => { wsRef.current?.send(JSON.stringify({ cmd: 'flush' })); setTimeout(stopAll, 400); setQueue((q) => q.map((r) => (r.id === 'live' ? { ...r, running: false } : r))) }
   const replay = (s: Sample, speed = 1) => {
     stopAll(); resetView(); setActiveId(s.id)
-    const ws = new WebSocket(wsUrl(`/ws/replay?sample=${encodeURIComponent(s.file)}&speed=${speed}`)); wsRef.current = ws
+    const ws = openWs(`/ws/replay?sample=${encodeURIComponent(s.file)}&speed=${speed}`); wsRef.current = ws
     ws.onmessage = (m) => onEvent(s.id, s.title, s.kind)(JSON.parse(m.data))
     ws.onerror = () => setErr('Replay connection failed.')
     upsert({ id: s.id, title: s.title, kind: s.kind, overall: null, windows: [], running: true }); setMode('replay')
@@ -81,7 +86,11 @@ export default function App() {
     setWindows(res.windows); setOverall(res.overall); setMode('idle')
     upsert({ id: f.name, title: f.name, kind: 'upload', overall: res.overall, windows: res.windows, duration: res.duration, running: false })
   }
-  const openRow = (r: CallRow) => { if (r.running && r.id === activeId) return; stopAll(); setActiveId(r.id); setWindows(r.windows); setOverall(r.overall ?? EMPTY); setSelected(null) }
+  const openRow = (r: CallRow) => { if (r.running && r.id === activeId) return; stopAll(); setActiveId(r.id); setWindows(r.windows); setOverall(r.overall ?? EMPTY); setSelected(null); setFb(null) }
+  const sendFeedback = async (verdict: Verdict) => {
+    const res = await api.feedback({ verdict, scope: 'call', session_id: sessionId, line_id: activeId, urgency: overall.urgency, level: overall.level, signature: overall.signature, language: current?.language ?? null })
+    if ('error' in res) setErr(res.error); else setFb(verdict)
+  }
 
   const ready = !!health?.ready
   const explain = current && selected !== null ? current.explain : overall.explain
@@ -99,6 +108,7 @@ export default function App() {
         <div className="flex items-center gap-4 data text-[11px] text-[var(--color-text-dim)]">
           <span className="flex items-center gap-2"><i className={`inline-block w-2 h-2 rounded-full ${ready ? 'bg-[var(--color-ok)]' : health ? 'bg-[#d9a441]' : 'bg-[var(--color-bezel)]'}`} />{ready ? `ready · ${health?.device}` : health ? 'loading models…' : 'server offline'}</span>
           <span className="hidden lg:inline">{health?.whisper ?? '—'} · {health?.emotion ?? '—'}</span>
+          <input type="password" autoComplete="off" placeholder="operator key" value={key} onChange={(e) => { setKeyState(e.target.value); setKey(e.target.value.trim()) }} className="data text-[11px] w-[120px] bg-transparent border border-[var(--color-bezel)] rounded px-2 py-[2px] text-[var(--color-text)] placeholder:text-[var(--color-text-mute)]" aria-label="operator key" />
         </div>
       </header>
       <div className="px-5 py-[6px] text-[12px] text-[var(--color-text-dim)] border-b border-[var(--color-bezel)] bg-[var(--color-console-2)]">
@@ -155,6 +165,15 @@ export default function App() {
             <div className="col-span-12 xl:col-span-7 bezel flex flex-col min-h-[240px]">
               <div className="bezel-h"><span className="label">Transcript · whisper hi/en</span>{selected !== null && <button className="label !text-[var(--color-carbon)]" onClick={() => setSelected(null)}>follow the pen</button>}</div>
               <div className="flex-1 min-h-0 body-hi"><Transcript windows={windows} selected={selected} redact={redact} /></div>
+        <div className="border-t border-[var(--color-bezel)] p-3">
+          <div className="label mb-2">Was this priority right? <span className="text-[var(--color-text-mute)] normal-case tracking-normal">your answer trains the evaluation, not the model</span></div>
+          <div className="flex flex-wrap gap-1.5">
+            {([['agree', 'Agree'], ['too_high', 'Too high'], ['too_low', 'Too low'], ['missed_scam', 'Missed a scam'], ['false_alarm', 'False alarm']] as [Verdict, string][]).map(([v, l]) => (
+              <button key={v} className={`btn ${fb === v ? 'ink' : ''}`} disabled={!windows.length || mode === 'live' || mode === 'replay'} onClick={() => sendFeedback(v)}>{l}</button>
+            ))}
+          </div>
+          {fb && <div className="text-[11px] text-[var(--color-text-dim)] mt-2">Logged: {fb.replace('_', ' ')}. Thank you.</div>}
+        </div>
             </div>
 
             {/* instrument cluster */}

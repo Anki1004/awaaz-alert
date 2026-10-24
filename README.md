@@ -63,6 +63,35 @@ cd web && npm install && npm run dev # http://127.0.0.1:5173  (proxies /api and 
 python server/eval.py
 ```
 
+## Production hardening (this branch: `production`)
+
+The hackathon build is the `main` branch. This branch turns the prototype into something a helpline could pilot
+*safely*. It does **not** make it validated: accuracy on real calls is still unmeasured (see Stress test and
+`docs/PILOT.md`).
+
+| area | what was added | where |
+|---|---|---|
+| access | API-key auth on HTTP + WebSocket, per-operator rate limits, upload/frame caps, idle timeout; production refuses to start with weak/missing keys or wildcard CORS | `server/config.py`, `security.py`, `main.py` |
+| privacy | operators get **server-side redacted** transcripts unless explicitly granted reveal; no audio or transcript is ever written | `main.scrub_message`, `docs/SECURITY.md` |
+| accountability | hash-chained audit log (who/what/when + aggregate numbers, never content), `python server/audit.py verify` | `server/audit.py` |
+| telephony | `/ws/ingest`: G.711 mu-law/A-law or PCM at 8-48 kHz, one caller channel per call, line ids, admission control, lag reporting | `server/telephony.py`, `docs/DEPLOYMENT.md` |
+| evaluation loop | operator verdict buttons (agree / too high / too low / missed scam / false alarm) stored with numbers only; CSV export | `server/feedback.py`, `export_feedback.py` |
+| operations | `/ready`, Prometheus `/metrics`, Dockerfile, compose, nginx TLS template | `Dockerfile`, `deploy/` |
+| measurement | G.711 narrowband eval, concurrent-stream capacity benchmark, 48 unit/API tests | `server/eval_narrowband.py`, `bench_capacity.py`, `tests/` |
+| governance | threat model and known gaps, pilot protocol with pre-registered go/no-go, model card | `docs/SECURITY.md`, `PILOT.md`, `MODEL-CARD.md` |
+
+Measured on the author's RTX 4060 laptop GPU: **about 2 simultaneous calls per GPU** (3 falls behind real time), so a
+centre needs roughly one such GPU per two peak concurrent lines until batching is built. Telephone-codec audio (8 kHz
+G.711) on clean synthetic calls moved urgency by 3.8 points on average (scams caught 10/15 vs 11/15 at 16 kHz); real PSTN
+noise, jitter and packet loss are untested. Docker/nginx files are untested templates.
+
+```
+python -m pytest tests                       # 48 tests, no GPU needed
+AWAAZ_MODE=production AWAAZ_API_KEYS=... AWAAZ_ORIGINS=... python server/main.py
+python server/bench_capacity.py 1 2 3        # size YOUR hardware
+python server/eval_narrowband.py             # telephone-codec check
+```
+
 ## Evaluation
 
 | sample (synthetic, edge-tts) | kind | urgency | level | named script | fraud | avg latency / 3 s window | RTF |

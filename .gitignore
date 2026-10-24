@@ -20,3 +20,5 @@ docs/demo-raw.webm
 docs/AwaazAlert-demo-2min.mp4
 samples/hard/*.wav
 samples/heldout/*.wav
+.env
+data/

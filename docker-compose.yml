@@ -1,0 +1,30 @@
+# One GPU host. Bind to loopback only: put nginx (deploy/nginx.conf) or your SSO gateway in front for TLS.
+# Not tested on the author's machine (no Docker): see docs/DEPLOYMENT.md "what is untested".
+services:
+  awaaz:
+    build: .
+    image: awaazalert:0.2
+    env_file: .env
+    ports:
+      - "127.0.0.1:8765:8765"
+    volumes:
+      - awaaz-data:/data          # audit.jsonl + feedback.db (numbers and verdicts only, never audio or transcripts)
+      - awaaz-models:/models
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  awaaz-data:
+  awaaz-models:
