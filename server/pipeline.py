@@ -312,6 +312,7 @@ class WindowResult:
     explain: list = field(default_factory=list)
     latency_ms: int = 0
     asr_conf: float | None = None   # mean exp(avg_logprob) of the decoded segments: how sure Whisper was
+    speech_rate_term: float = 0.0
     agents: list = field(default_factory=list)  # independent evidence-agent findings
 
     def to_dict(self) -> dict:
@@ -401,7 +402,7 @@ class Session:
             transcript=tr["window_text"], transcript_redacted=redact(tr["window_text"]), language=tr["language"],
             fraud=fraud, distress=round(distress, 3), urgency=urgency, level=level_for(urgency), explain=explain,
             latency_ms=int((time.perf_counter() - t0) * 1000), asr_conf=tr.get("asr_conf"),
-            agents=agent_review["agents"],
+            speech_rate_term=round(rate_term, 3), agents=agent_review["agents"],
         )
         self.t += len(window) / SR
         self.windows.append(res.to_dict())
@@ -445,11 +446,7 @@ def summarize(windows: list[dict], duration: float, full_text: str = "") -> dict
     base_overall_u = int(round(max(peak_mean, call_level, 45 if sig else 0, 35 if loss_report else 0)))
     call_agent_review = run_agents(
         text=full, fraud=fr, distress=max_distress, arousal=max_arousal,
-        rate_term=max(
-            (float(a.get("score", 0)) for w in windows for a in w.get("agents", [])
-             if a.get("name") == "Acoustic distress agent"),
-            default=0.0,
-        ),
+        rate_term=max((float(w.get("speech_rate_term", 0.0)) for w in windows), default=0.0),
         prosody={"speech": any(w.get("prosody", {}).get("speech", False) for w in windows)},
         base_urgency=base_overall_u,
     )
