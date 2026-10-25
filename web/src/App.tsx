@@ -92,7 +92,7 @@ export default function App() {
   const fraud = current?.fraud
 
   return (
-    <div className="h-full flex flex-col console">
+    <div className="min-h-full lg:h-full flex flex-col console">
       {/* console header */}
       <header className="flex items-end justify-between px-5 pt-4 pb-3 border-b border-[var(--color-bezel)]">
         <div className="flex items-end gap-4">
@@ -114,11 +114,11 @@ export default function App() {
         </div>
       )}
 
-      <main className="flex-1 min-h-0 grid grid-cols-12 gap-3 p-3">
+      <main className="flex-1 lg:min-h-0 grid grid-cols-12 gap-3 p-3">
         {/* patch panel */}
-        <aside className="col-span-12 lg:col-span-2 bezel flex flex-col min-h-0">
+        <aside className="col-span-12 lg:col-span-2 bezel flex flex-col lg:min-h-0">
           <div className="bezel-h"><span className="label">Lines</span><span className="data text-[11px] text-[var(--color-text-dim)]">{queue.length}</span></div>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto max-lg:flex-none max-lg:max-h-72">
             {queue.length === 0 && <div className="p-3 text-[12px] text-[var(--color-text-mute)]">No lines open. Start a live call or replay a sample.</div>}
             {queue.map((r) => (
               <button key={r.id} onClick={() => openRow(r)} className={`jack ${r.running ? 'live' : ''} ${activeId === r.id ? 'active' : ''}`}>
@@ -143,7 +143,7 @@ export default function App() {
         </aside>
 
         {/* register */}
-        <section className="col-span-12 lg:col-span-10 flex flex-col gap-3 min-h-0">
+        <section className="col-span-12 lg:col-span-10 flex flex-col gap-3 lg:min-h-0">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
               <span className="label">{mode === 'live' ? 'Line 1 · live' : mode === 'replay' ? 'Replay' : mode === 'file' ? 'Analysing recording' : 'Standby'}</span>
@@ -159,7 +159,7 @@ export default function App() {
           {/* the strip */}
           <StripChart windows={windows} selected={selected} onSelect={setSelected} signature={overall.signature} live={mode === 'live' || mode === 'replay'} />
 
-          <div className="grid grid-cols-12 gap-3 flex-1 min-h-0">
+          <div className="grid grid-cols-12 gap-3 flex-1 lg:min-h-0">
             {/* transcript lane */}
             <div className="col-span-12 xl:col-span-7 bezel flex flex-col min-h-[240px]">
               <div className="bezel-h"><span className="label">Transcript · whisper hi/en</span>{selected !== null && <button className="label !text-[var(--color-carbon)]" onClick={() => setSelected(null)}>follow the pen</button>}</div>
@@ -167,7 +167,7 @@ export default function App() {
             </div>
 
             {/* instrument cluster */}
-            <div className="col-span-12 xl:col-span-5 flex flex-col gap-3 min-h-0">
+            <div className="col-span-12 xl:col-span-5 flex flex-col gap-3 lg:min-h-0">
               <div className="bezel p-3">
                 <div className="flex items-start gap-3">
                   <div className="shrink-0"><Needle value={selected !== null && current ? current.urgency : overall.urgency} level={selected !== null && current ? current.level : overall.level} size={190} caption={selected !== null ? 'window' : 'triage priority'} /></div>
