@@ -440,13 +440,26 @@ def summarize(windows: list[dict], duration: float, full_text: str = "") -> dict
     # A calm caller reporting a real loss has flat affect and no scam script, so neither of the other two signals
     # fires. A first-person loss report is itself a reason for a human to pick up soon: floor it at "medium".
     loss_report = fr["categories"].get("victim_loss", 0) >= 0.5
-    # A contextual floor may appear in only one window, so preserve it at call level too.
-    agent_floor = max(
+    # Evaluate the full transcript as well as rolling windows. A coercive script can unfold over
+    # more than one 9-second window, so call-level context must not depend on one window's wording.
+    base_overall_u = int(round(max(peak_mean, call_level, 45 if sig else 0, 35 if loss_report else 0)))
+    call_agent_review = run_agents(
+        text=full, fraud=fr, distress=max_distress, arousal=max_arousal,
+        rate_term=max(
+            (float(a.get("score", 0)) for w in windows for a in w.get("agents", [])
+             if a.get("name") == "Acoustic distress agent"),
+            default=0.0,
+        ),
+        prosody={"speech": any(w.get("prosody", {}).get("speech", False) for w in windows)},
+        base_urgency=base_overall_u,
+    )
+    window_agent_floor = max(
         (int(a.get("floor", 0)) for w in windows for a in w.get("agents", [])
          if a.get("name") == "Risk adjudicator"),
         default=0,
     )
-    overall_u = int(round(max(peak_mean, call_level, 45 if sig else 0, 35 if loss_report else 0, agent_floor)))
+    agent_floor = max(window_agent_floor, int(call_agent_review["urgency_floor"]))
+    overall_u = max(base_overall_u, agent_floor)
     confs = [w["asr_conf"] for w in windows if w.get("asr_conf") is not None]
     asr_conf = round(sum(confs) / len(confs), 2) if confs else None
     explain = []
@@ -472,6 +485,7 @@ def summarize(windows: list[dict], duration: float, full_text: str = "") -> dict
                     "asr_confidence": asr_conf, "loss_report": loss_report,
                     "fraud": {"score": fr["score"], "categories": fr["categories"]},
                     "transcript": full, "transcript_redacted": redact(full),
-                    "agent_review_floor": agent_floor,
+                    "agent_review_floor": agent_floor, "agents": call_agent_review["agents"],
+                    "agent_escalation_reasons": call_agent_review["escalation_reasons"],
                     "avg_latency_ms": int(sum(w["latency_ms"] for w in windows) / len(windows))},
     }
