@@ -110,7 +110,7 @@ export default function App() {
       </div>
       {STATIC_DEMO && (
         <div className="px-5 py-[6px] text-[12px] border-b border-[var(--color-bezel)] bg-[#2a2410] text-[#f0d79a]">
-          <span className="label mr-2 !text-[#f0d79a]">Recorded demo</span> Every score here was produced by the real pipeline on an RTX 4060 and is replayed in step with the call audio — press ▶ on a sample line. Live mic and uploads need the GPU server: <a className="underline" href={REPO_URL} target="_blank" rel="noreferrer">run it from GitHub</a> · <a className="underline" href="/AwaazAlert-demo-90s.mp4" target="_blank" rel="noreferrer">watch the 90-second video</a>.
+          <span className="label mr-2 !text-[#f0d79a]">Recorded demo</span> Every score here was produced by the real pipeline on an RTX 4060 and is replayed in step with the call audio — press ▶ on a sample line. Live mic and uploads need the GPU server: <a className="underline" href={REPO_URL} target="_blank" rel="noreferrer">run it from GitHub</a> · watch the 85-second video: <a className="underline" href="/AwaazAlert-demo-hinglish.mp4" target="_blank" rel="noreferrer">Hinglish</a> / <a className="underline" href="/AwaazAlert-demo-90s.mp4" target="_blank" rel="noreferrer">English</a>.
         </div>
       )}
 

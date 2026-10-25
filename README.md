@@ -10,7 +10,7 @@ be prioritised and the operator sees *why* a call lit up. It never claims to kno
 > Indicative signal only. Scores help prioritise calls; they are not evidence of anyone's intent,
 > honesty or guilt. Audio is analysed in memory and never stored. (Shown permanently in the UI.)
 
-**▶ Try it:** [awaaz-alert.pages.dev](https://awaaz-alert.pages.dev) · **🎬 90-second video:** [AwaazAlert-demo-90s.mp4](https://awaaz-alert.pages.dev/AwaazAlert-demo-90s.mp4)
+**▶ Try it:** [awaaz-alert.pages.dev](https://awaaz-alert.pages.dev) · **🎬 Demo video (85 s):** [Hinglish](https://awaaz-alert.pages.dev/AwaazAlert-demo-hinglish.mp4) · [English](https://awaaz-alert.pages.dev/AwaazAlert-demo-90s.mp4)
 
 The hosted page is a **recorded demo**: it replays outputs the real pipeline produced on an RTX 4060 (`web/public/demo/`,
 captured from `/ws/replay` and `/analyze`) in step with the call audio, so judges can click through without a GPU. Live
