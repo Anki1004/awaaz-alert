@@ -1,0 +1,37 @@
+[
+ {
+  "id": "digital-arrest",
+  "file": "digital-arrest.wav",
+  "title": "Digital arrest — scammer side",
+  "kind": "fraudster",
+  "note": "Classic 'CBI officer' script: impersonation + threat + secrecy + payment."
+ },
+ {
+  "id": "victim-distress",
+  "file": "victim-distress.wav",
+  "title": "Victim calling 1930 after loss",
+  "kind": "victim",
+  "note": "Victim-side distress words + loss report; should score high on victim_loss and urgency."
+ },
+ {
+  "id": "kyc-otp",
+  "file": "kyc-otp.wav",
+  "title": "Bank KYC / OTP scam",
+  "kind": "fraudster",
+  "note": "Bank impersonation + account block threat + OTP request."
+ },
+ {
+  "id": "normal-query",
+  "file": "normal-query.wav",
+  "title": "Routine query — low priority",
+  "kind": "normal",
+  "note": "Control sample: calm informational call, should stay low."
+ },
+ {
+  "id": "task-scam",
+  "file": "task-scam.wav",
+  "title": "Part-time task / investment scam",
+  "kind": "fraudster",
+  "note": "English-Hinglish mix: payment + urgency, Telegram task scam."
+ }
+]
