@@ -8,6 +8,14 @@ export interface Fraud {
   signature: string | null
 }
 
+export interface AgentFinding {
+  name: string
+  status: 'signal' | 'no_signal' | 'escalated' | 'base_score_kept'
+  score: number
+  floor: number
+  evidence: string[]
+}
+
 export interface WindowResult {
   t_start: number
   t_end: number
@@ -22,6 +30,7 @@ export interface WindowResult {
   level: Level
   explain: string[]
   latency_ms: number
+  agents?: AgentFinding[]
 }
 
 export interface Overall {
@@ -32,6 +41,7 @@ export interface Overall {
   transcript?: string
   transcript_redacted?: string
   avg_latency_ms?: number
+  agent_review_floor?: number
 }
 
 export interface Sample { id: string; file: string; title: string; kind: string; note: string }
