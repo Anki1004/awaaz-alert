@@ -20,22 +20,41 @@ be prioritised and the operator sees *why* a call lit up. It never claims to kno
 | Output | "angry 0.71" | urgency + level + **named scam pattern** ("Digital arrest", "Bank/KYC block", "Task scam"…) + **explanation built only from measured features** |
 | Operator view | single screen | **priority queue** across calls, timeline, highlighted cues, PII redaction (on by default) |
 | Responsible AI | a sentence | banner in the UI, no storage, indicative-only framing, redaction, explainability — the PS objective verbatim |
+| Triage logic | one emotion/keyword score | five independent local agents combine acoustic evidence, scam scripts, coercive context, victim-loss reports, and a monotonic adjudicator |
 
 ## How it works
 
 ```
-mic / file ──► 16 kHz PCM ──► 3 s window ──┬─► emotion2vec+ (FunASR)  → fearful/sad/angry/… probs ─┐
-                                           ├─► librosa prosody         → pitch σ, RMS, voiced ratio → arousal
-                                           └─► faster-whisper (hi/en)  → transcript → fraud lexicon → categories + signature
-                                                                                                         │
-             urgency = 100 × (0.40·distress + 0.20·arousal + 0.30·fraud + 0.10·speech-rate)  ◄──────────┘
-             distress = P(fear) + 0.8·P(sad) + 0.6·P(angry) + 0.2·P(surprised)
+mic / file ──► 16 kHz PCM ──► rolling 3 s window ──┬─► emotion2vec+ (FunASR) → distress evidence ─┐
+                                                     ├─► librosa prosody     → pitch σ / RMS / voicing ─┤
+                                                     └─► faster-whisper      → transcript → fraud lexicon ┤
+                                                                                                          ▼
+                  ┌─ Acoustic distress agent ────────┐
+                  ├─ Fraud-script agent ─────────────┤
+                  ├─ Contextual coercion agent ──────┼─► Risk adjudicator → urgency + evidence
+                  └─ Victim-protection agent ────────┘
+             base urgency = 100 × (0.40·distress + 0.20·arousal + 0.30·fraud + 0.10·speech-rate)
+             adjudicator = max(base urgency, evidence-based human-review floor); never lowers the base score
              level: <35 low · 35–59 medium · 60–79 high · ≥80 critical
-             overall (per call) = 0.6·max(window) + 0.4·mean(window)   — one critical moment outweighs a calm average
+             overall (per call) = 0.6·max(window) + 0.4·mean(window), with the strongest agent floor preserved
 ```
 
 Every line in the "Why this score" panel is generated from a measured value (`pitch σ 71 Hz`, `fraud cues
 (impersonation, threat): cbi, arrest, parcel`), never from a template guess.
+
+### Contextual multi-agent triage (`server/agents.py`)
+
+The three existing signal extractors remain unchanged. Their evidence is reviewed by four specialist agents and a deterministic adjudicator:
+
+- **Acoustic distress agent** reports only the measured emotion, caller-relative prosody, and speech-rate cues.
+- **Fraud-script agent** reuses the existing Hinglish lexicon and named-script results.
+- **Contextual coercion agent** looks for combinations such as a service-disconnection threat plus an urgent/UPI demand, an authority claim plus a SIM-block threat and coercion, or a prize claim plus an upfront fee.
+- **Victim-protection agent** keeps likely first-person loss reports above routine priority even when a caller sounds calm.
+- **Risk adjudicator** preserves the original fused score and may apply an evidence-backed review floor. It never lowers urgency.
+
+The agent scores are rule/model signal strengths, **not probabilities of fraud**. The layer is local Python with no LLM calls, paid API, or new runtime dependency; audio still stays in memory. Its structured per-window findings are added to the API response under `agents`, and the call-level floor appears as `overall.agent_review_floor`. The current dashboard can ignore these additive fields, so the existing recording and slides do not need to change.
+
+Transcript-level contract tests: `python -m unittest discover -s server -p 'test_*.py'`. They check contextual scam patterns and legitimate lookalikes; they do **not** establish accuracy on real helpline calls.
 
 ### Fraud-script lexicon (`server/fraud_lexicon.py`)
 Six categories mirror how Indian scam calls are actually scripted: **impersonation** (CBI/ED/police/bank/courier),
@@ -61,6 +80,7 @@ cd web && npm install && npm run dev # http://127.0.0.1:5173  (proxies /api and 
 
 # evaluation table used in the slides
 python server/eval.py
+python -m unittest discover -s server -p 'test_*.py'
 ```
 
 ## Evaluation

@@ -31,6 +31,7 @@ from statistics import median
 import numpy as np
 
 from fraud_lexicon import scan as fraud_scan, redact
+from agents import run_agents
 
 log = logging.getLogger("awaaz")
 SR = 16000
@@ -311,6 +312,7 @@ class WindowResult:
     explain: list = field(default_factory=list)
     latency_ms: int = 0
     asr_conf: float | None = None   # mean exp(avg_logprob) of the decoded segments: how sure Whisper was
+    agents: list = field(default_factory=list)  # independent evidence-agent findings
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -360,9 +362,17 @@ class Session:
         distress = min(1.0, emo["fearful"] * 1.0 + emo["sad"] * 0.8 + emo["angry"] * 0.6 + emo["surprised"] * 0.1)
         rate_term = min(1.0, max(0.0, (tr["words_per_sec"] - 2.2) / 2.5))
         fused = 0.40 * distress + 0.20 * arousal + 0.30 * fraud["score"] + 0.10 * rate_term
-        urgency = int(round(100 * fused))
+        base_urgency = int(round(100 * fused))
         if fraud["signature"]:
-            urgency = max(urgency, 40)  # a named scam script is actionable on its own, whatever the affect
+            base_urgency = max(base_urgency, 40)  # a named scam script remains actionable on its own
+
+        # Specialist agents assess independent evidence families; the adjudicator is monotonic:
+        # it may apply a documented human-review floor, but it never lowers the measured base score.
+        agent_review = run_agents(
+            text=tr["context_text"], fraud=fraud, distress=distress, arousal=arousal,
+            rate_term=rate_term, prosody=pro, base_urgency=base_urgency,
+        )
+        urgency = agent_review["final_urgency"]
 
         explain = []
         top_emo = max(emo, key=emo.get)
@@ -381,12 +391,17 @@ class Session:
         if not explain:
             explain.append("no distress or fraud cues in this window")
 
+        for reason in agent_review["escalation_reasons"]:
+            if reason not in explain:
+                explain.append(reason)
+
         res = WindowResult(
             t_start=round(self.t, 2), t_end=round(self.t + len(window) / SR, 2),
             emotion=emo, prosody={**{k: (round(v, 4) if isinstance(v, float) else v) for k, v in pro.items()}, "arousal": round(arousal, 3)},
             transcript=tr["window_text"], transcript_redacted=redact(tr["window_text"]), language=tr["language"],
             fraud=fraud, distress=round(distress, 3), urgency=urgency, level=level_for(urgency), explain=explain,
             latency_ms=int((time.perf_counter() - t0) * 1000), asr_conf=tr.get("asr_conf"),
+            agents=agent_review["agents"],
         )
         self.t += len(window) / SR
         self.windows.append(res.to_dict())
@@ -425,7 +440,13 @@ def summarize(windows: list[dict], duration: float, full_text: str = "") -> dict
     # A calm caller reporting a real loss has flat affect and no scam script, so neither of the other two signals
     # fires. A first-person loss report is itself a reason for a human to pick up soon: floor it at "medium".
     loss_report = fr["categories"].get("victim_loss", 0) >= 0.5
-    overall_u = int(round(max(peak_mean, call_level, 45 if sig else 0, 35 if loss_report else 0)))
+    # A contextual floor may appear in only one window, so preserve it at call level too.
+    agent_floor = max(
+        (int(a.get("floor", 0)) for w in windows for a in w.get("agents", [])
+         if a.get("name") == "Risk adjudicator"),
+        default=0,
+    )
+    overall_u = int(round(max(peak_mean, call_level, 45 if sig else 0, 35 if loss_report else 0, agent_floor)))
     confs = [w["asr_conf"] for w in windows if w.get("asr_conf") is not None]
     asr_conf = round(sum(confs) / len(confs), 2) if confs else None
     explain = []
@@ -451,5 +472,6 @@ def summarize(windows: list[dict], duration: float, full_text: str = "") -> dict
                     "asr_confidence": asr_conf, "loss_report": loss_report,
                     "fraud": {"score": fr["score"], "categories": fr["categories"]},
                     "transcript": full, "transcript_redacted": redact(full),
+                    "agent_review_floor": agent_floor,
                     "avg_latency_ms": int(sum(w["latency_ms"] for w in windows) / len(windows))},
     }
