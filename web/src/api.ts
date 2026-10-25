@@ -30,6 +30,7 @@ export interface WindowResult {
   level: Level
   explain: string[]
   latency_ms: number
+  speech_rate_term?: number
   agents?: AgentFinding[]
 }
 
@@ -42,6 +43,8 @@ export interface Overall {
   transcript_redacted?: string
   avg_latency_ms?: number
   agent_review_floor?: number
+  agents?: AgentFinding[]
+  agent_escalation_reasons?: string[]
 }
 
 export interface Sample { id: string; file: string; title: string; kind: string; note: string }
