@@ -5,6 +5,7 @@ import { StripChart } from './components/StripChart'
 import { Needle, Vu } from './components/Meter'
 import { Transcript } from './components/Transcript'
 import { Scope } from './components/Scope'
+import { RecordedReplay, REPO_URL, STATIC_DEMO } from './demo'
 
 type Mode = 'idle' | 'live' | 'replay' | 'file'
 interface CallRow { id: string; title: string; kind: string; overall: Overall | null; windows: WindowResult[]; duration?: number; running?: boolean }
@@ -45,6 +46,7 @@ export default function App() {
   }
 
   const startLive = async () => {
+    if (STATIC_DEMO) { setErr(`Live microphone analysis runs on the local GPU server (faster-whisper + emotion2vec+), not on this hosted page. Clone ${REPO_URL} to try it live.`); return }
     stopAll(); resetView(); setActiveId('live')
     try {
       const ws = new WebSocket(wsUrl('/ws/live')); wsRef.current = ws
@@ -58,7 +60,10 @@ export default function App() {
   const endLive = () => { wsRef.current?.send(JSON.stringify({ cmd: 'flush' })); setTimeout(stopAll, 400); setQueue((q) => q.map((r) => (r.id === 'live' ? { ...r, running: false } : r))) }
   const replay = (s: Sample, speed = 1) => {
     stopAll(); resetView(); setActiveId(s.id)
-    const ws = new WebSocket(wsUrl(`/ws/replay?sample=${encodeURIComponent(s.file)}&speed=${speed}`)); wsRef.current = ws
+    const ws = STATIC_DEMO
+      ? (new RecordedReplay(s.id, s.file, speed) as unknown as WebSocket)
+      : new WebSocket(wsUrl(`/ws/replay?sample=${encodeURIComponent(s.file)}&speed=${speed}`))
+    wsRef.current = ws
     ws.onmessage = (m) => onEvent(s.id, s.title, s.kind)(JSON.parse(m.data))
     ws.onerror = () => setErr('Replay connection failed.')
     upsert({ id: s.id, title: s.title, kind: s.kind, overall: null, windows: [], running: true }); setMode('replay')
@@ -66,8 +71,7 @@ export default function App() {
   const scoreAll = async () => {
     for (const s of samples) {
       upsert({ id: s.id, title: s.title, kind: s.kind, overall: null, windows: [], running: true })
-      const blob = await fetch(`/api/samples/${encodeURIComponent(s.file)}`).then((x) => x.blob())
-      const res = await api.analyze(new File([blob], s.file))
+      const res = await api.analyzeSample(s)
       if ('error' in res) { setErr(res.error); continue }
       upsert({ id: s.id, title: s.title, kind: s.kind, overall: res.overall, windows: res.windows, duration: res.duration, running: false })
     }
@@ -104,6 +108,11 @@ export default function App() {
       <div className="px-5 py-[6px] text-[12px] text-[var(--color-text-dim)] border-b border-[var(--color-bezel)] bg-[var(--color-console-2)]">
         <span className="label mr-2 text-[var(--color-text)]">Indicative only</span> Scores order the queue; they are not evidence of anyone's intent, honesty or guilt. Audio is analysed in memory and never stored.
       </div>
+      {STATIC_DEMO && (
+        <div className="px-5 py-[6px] text-[12px] border-b border-[var(--color-bezel)] bg-[#2a2410] text-[#f0d79a]">
+          <span className="label mr-2 !text-[#f0d79a]">Recorded demo</span> Every score here was produced by the real pipeline on an RTX 4060 and is replayed in step with the call audio — press ▶ on a sample line. Live mic and uploads need the GPU server: <a className="underline" href={REPO_URL} target="_blank" rel="noreferrer">run it from GitHub</a> · <a className="underline" href="/AwaazAlert-demo-90s.mp4" target="_blank" rel="noreferrer">watch the 90-second video</a>.
+        </div>
+      )}
 
       <main className="flex-1 min-h-0 grid grid-cols-12 gap-3 p-3">
         {/* patch panel */}

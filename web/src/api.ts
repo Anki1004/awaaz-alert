@@ -1,3 +1,4 @@
+import { STATIC_DEMO, REPO_URL, loadRecording } from './demo'
 // Types mirror server/pipeline.py WindowResult + summarize().
 export type Level = 'low' | 'medium' | 'high' | 'critical'
 
@@ -39,15 +40,24 @@ export interface Sample { id: string; file: string; title: string; kind: string;
 export interface Health { ready: boolean; device?: string; whisper?: string; emotion?: string }
 
 export const api = {
-  health: () => fetch('/api/health').then((r) => r.json() as Promise<Health>),
-  samples: () => fetch('/api/samples').then((r) => r.json() as Promise<Sample[]>),
-  analyze: async (file: File) => {
+  health: () => (STATIC_DEMO ? fetch('/demo/meta.json') : fetch('/api/health')).then((r) => r.json() as Promise<Health>),
+  samples: () => (STATIC_DEMO ? fetch('/demo/samples.json') : fetch('/api/samples')).then((r) => r.json() as Promise<Sample[]>),
+  analyze: async (file: File): Promise<AnalyzeResult> => {
+    if (STATIC_DEMO) return { error: `This hosted page replays recorded results. Uploading a recording needs the local GPU server — see ${REPO_URL}` }
     const fd = new FormData()
     fd.append('file', file)
     const r = await fetch('/api/analyze', { method: 'POST', body: fd })
-    return r.json() as Promise<{ duration: number; windows: WindowResult[]; overall: Overall } | { error: string }>
+    return r.json() as Promise<AnalyzeResult>
+  },
+  /** Score one bundled sample: recorded output in the hosted demo, the live /analyze otherwise. */
+  analyzeSample: async (s: Sample): Promise<AnalyzeResult> => {
+    if (STATIC_DEMO) return (await loadRecording(s.id)).analyze
+    const blob = await fetch(`/api/samples/${encodeURIComponent(s.file)}`).then((x) => x.blob())
+    return api.analyze(new File([blob], s.file))
   },
 }
+
+export type AnalyzeResult = { duration: number; windows: WindowResult[]; overall: Overall } | { error: string }
 
 export type WsEvent =
   | { type: 'hello'; window_s: number; duration?: number }
